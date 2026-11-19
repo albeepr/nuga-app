@@ -14,6 +14,7 @@
   import {
     backlightColorChanged,
     backlightColorsStore,
+    defaultColors,
     hexToRgb,
     stateStore,
   } from '$entities/lights'
@@ -33,7 +34,7 @@
 
   function handleOpen (): void {
     const { mode, color } = $stateStore.backlight
-    hex = $backlightColorsStore[mode][color]
+    hex = ($backlightColorsStore[mode] ?? defaultColors)[color]
     const rgb = hexToRgb(hex)
     rgba = {
       r: rgb.R,

@@ -1,0 +1,4 @@
+github.com/sstallion/go-hid v0.14.1 h1:shbZlKqv5fr1KnxwqtLEPGkOoA6OSUWTx9TblegATvc=
+github.com/sstallion/go-hid v0.14.1/go.mod h1:fPKp4rqx0xuoTV94gwKojsPG++KNKhxuU88goGuGM7I=
+golang.org/x/sys v0.9.0 h1:KS/R3tvhPqvJvwcKfnBHJwwthS11LRhmM5D59eEXa0s=
+golang.org/x/sys v0.9.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

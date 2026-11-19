@@ -1,11 +1,12 @@
 import { createEffect, createEvent, createStore, sample } from 'effector'
-import { or } from 'patronum'
+import { interval, or } from 'patronum'
 
-import { connected, createHIDEffect } from '$shared/model'
+import { connected, createHIDEffect, disconnected } from '$shared/model'
 
-import { getFirmware, getSupports } from '../api'
+import { getFirmware, getStatus, getSupports } from '../api'
 import { restoreDefaultState, restoreState, saveState } from '../api/state'
 import { defaultSupports } from '../lib/constants'
+import type { KeyboardStatus } from './types'
 
 export const firmwareVersionUpdated = createEvent<string>('firmwareVersionUpdated')
 export const userStateSaved = createEvent('stateSaved')
@@ -72,3 +73,23 @@ export const restoringStateStore = or(
   restoreUserStateFx.pending,
   restoreDefaultStateFx.pending,
 )
+
+// Live status (battery, connection) for keyboards that report it
+export const statusStore = createStore<KeyboardStatus | null>(null, {
+  name: 'keyboardStatus',
+})
+export const getStatusFx = createEffect('getStatus', { handler: getStatus })
+
+const { tick: statusTick } = interval({
+  timeout: 30000,
+  start: connected,
+  stop: disconnected,
+  leading: true,
+})
+
+sample({
+  clock: statusTick,
+  target: getStatusFx,
+})
+statusStore.on(getStatusFx.doneData, (_, value) => value)
+statusStore.reset(disconnected)

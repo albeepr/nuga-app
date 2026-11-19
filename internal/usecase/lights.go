@@ -6,6 +6,7 @@ import (
 	"nuga_ui/internal/interfaces"
 
 	"github.com/mishamyrt/nuga-lib"
+	"github.com/mishamyrt/nuga-lib/features"
 	"github.com/mishamyrt/nuga-lib/features/light"
 )
 
@@ -32,10 +33,10 @@ func (l *LightsUsecase) GetLightModes() dto.LightModes {
 	dev := l.repo.Device.Get()
 	var modes dto.LightModes = make([]light.Domain, 0)
 	if dev.Capabilities.Has(nuga.BacklightCapability) {
-		modes = append(modes, light.BacklightDomain)
+		modes = append(modes, l.backlightDomain())
 	}
 	if dev.Capabilities.Has(nuga.SidelightCapability) {
-		modes = append(modes, light.SidelightDomain)
+		modes = append(modes, l.sidelightDomain())
 	}
 	if dev.Capabilities.Has(nuga.HalolightCapability) {
 		modes = append(modes, light.HaloDomain)
@@ -60,6 +61,9 @@ func (l *LightsUsecase) GetLightState() (dto.LightState, error) {
 // GetBacklightColors returns backlight colors
 func (l *LightsUsecase) GetBacklightColors() (dto.BacklightColors, error) {
 	dev := l.repo.Device.Get()
+	if palette, ok := dev.Features.Light.(features.BacklightPalette); ok {
+		return palette.GetPalette(), nil
+	}
 	mode := l.repo.Settings.GetMode()
 	colors, err := dev.Features.Light.GetBacklightColors()
 	if err != nil {
@@ -82,7 +86,7 @@ func (l *LightsUsecase) SetLightState(r dto.LightStateRequest) error {
 	if err != nil {
 		return err
 	}
-	err = l.applyMiscState(&state.Sidelight, r.Sidelight, light.SidelightDomain)
+	err = l.applyMiscState(&state.Sidelight, r.Sidelight, l.sidelightDomain())
 	if err != nil {
 		return err
 	}
@@ -96,6 +100,17 @@ func (l *LightsUsecase) SetLightState(r dto.LightStateRequest) error {
 // SetBacklightColor sets backlight color by mode and index
 func (l *LightsUsecase) SetBacklightColor(mode, index uint8, color light.RGB) error {
 	dev := l.repo.Device.Get()
+	if palette, ok := dev.Features.Light.(features.BacklightPalette); ok {
+		err := palette.SetPaletteColor(mode, index, color)
+		if err != nil {
+			return err
+		}
+		state, err := dev.Features.Light.GetEffects()
+		if err != nil {
+			return err
+		}
+		return dev.Features.Light.SetEffects(state)
+	}
 	OSMode := l.repo.Settings.GetMode()
 	colors, err := dev.Features.Light.GetBacklightColors()
 	if err != nil {
@@ -118,7 +133,8 @@ func (l *LightsUsecase) SetBacklightColor(mode, index uint8, color light.RGB) er
 }
 
 func (l *LightsUsecase) applyBacklightState(b *light.BacklightEffect, r dto.LightDomainRequest) error {
-	b.Mode = light.BacklightDomain.Find(r.Mode)
+	domain := l.backlightDomain()
+	b.Mode = domain.Find(r.Mode)
 	if b.Mode == nil {
 		b.Mode = &light.BacklightOff
 	}
@@ -171,4 +187,22 @@ func (l *LightsUsecase) applyMiscState(
 	}
 	e.Brightness = r.Brightness
 	return nil
+}
+
+// backlightDomain returns backlight modes of the connected device
+func (l *LightsUsecase) backlightDomain() light.Domain {
+	dev := l.repo.Device.Get()
+	if provider, ok := dev.Features.Light.(features.BacklightDomainProvider); ok {
+		return provider.BacklightDomain()
+	}
+	return light.BacklightDomain
+}
+
+// sidelightDomain returns side light modes of the connected device
+func (l *LightsUsecase) sidelightDomain() light.Domain {
+	dev := l.repo.Device.Get()
+	if provider, ok := dev.Features.Light.(features.SidelightDomainProvider); ok {
+		return provider.SidelightDomain()
+	}
+	return light.SidelightDomain
 }

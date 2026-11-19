@@ -3,7 +3,11 @@
 <script>
   import { fsd } from 'feature-sliced-svelte'
 
-  import { DeviceInfoGroup, firmwareVersionStore } from '$entities/device'
+  import {
+    DeviceInfoGroup,
+    firmwareVersionStore,
+    statusStore,
+  } from '$entities/device'
   import { connectionStore } from '$shared/model'
 
   $: connection = $connectionStore
@@ -15,5 +19,6 @@
     name={connection.name}
     path={connection.path}
     firmware={firmwareVersion}
+    status={$statusStore}
   />
 </div>

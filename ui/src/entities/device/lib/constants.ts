@@ -5,4 +5,5 @@ export const defaultSupports: Readonly<Supports> = {
   sidelight: false,
   halolight: false,
   keys: false,
+  state: false,
 }

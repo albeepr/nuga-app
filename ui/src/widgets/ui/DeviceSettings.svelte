@@ -3,7 +3,7 @@
 <script lang="ts">
   import { FormGroup, FormRow, Stack, Typography } from '@naco-ui/svelte'
 
-  import { restoringStateStore } from '$entities/device'
+  import { restoringStateStore, supportsStore } from '$entities/device'
   import { supportsKeyStore } from '$entities/keys'
   import {
     OSModeSelect,
@@ -16,24 +16,27 @@
 
   $: isRestoring = $restoringStateStore
   $: supportsKeys = $supportsKeyStore
+  $: supportsState = $supportsStore.state
 </script>
 
 <FormGroup title="Configuration">
   <FormRow title="System mode">
     <OSModeSelect />
   </FormRow>
-  <FormRow
-    align="top"
-    title="State"
-    subtitle="The complete state of the device: lights and keys is saved to the file.
-  The state can be restored only on the same model of the keyboard.
-  Files made in different program versions may be incompatible."
-  >
-    <Stack fullHeight align="start" justify="end" direction="horizontal" gap="s">
-      <StateBackupButton>Save...</StateBackupButton>
-      <StateRestoreButton disabled={isRestoring}>Load...</StateRestoreButton>
-    </Stack>
-  </FormRow>
+  {#if supportsState}
+    <FormRow
+      align="top"
+      title="State"
+      subtitle="The complete state of the device: lights and keys is saved to the file.
+    The state can be restored only on the same model of the keyboard.
+    Files made in different program versions may be incompatible."
+    >
+      <Stack fullHeight align="start" justify="end" direction="horizontal" gap="s">
+        <StateBackupButton>Save...</StateBackupButton>
+        <StateRestoreButton disabled={isRestoring}>Load...</StateRestoreButton>
+      </Stack>
+    </FormRow>
+  {/if}
   {#if $activeFeaturesStore.keyboardThemes}
     <FormRow>
       <Stack align="center" justify="space-between" direction="horizontal">

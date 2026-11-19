@@ -27,7 +27,8 @@ export const defaultColors = [
   '#ffffff',
 ]
 
-export const backlightDefaultColors: string[][] = Array(24).fill(defaultColors)
+// Sized for QMK keyboards too (Air96 V2 has 40 effects); Halo uses 24.
+export const backlightDefaultColors: string[][] = Array(48).fill(defaultColors)
 
 const defaultMode: LightDomainMode = {
   code: 1,
@@ -56,6 +57,12 @@ export const lightTemplates: Record<SupportedKeyboards, KeyboardLightSupports> =
     backlight: true,
     sidelight: true,
     halolight: true,
+  },
+  Air96V2: {
+    backlight: true,
+    // only with NuPhy firmware patched for VIA side light control
+    sidelight: true,
+    halolight: false,
   },
 }
 

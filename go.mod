@@ -41,4 +41,6 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 )
 
+replace github.com/mishamyrt/nuga-lib => ./third_party/nuga-lib
+
 // replace github.com/wailsapp/wails/v2 v2.5.1 => /Users/mishamyrt/go/pkg/mod

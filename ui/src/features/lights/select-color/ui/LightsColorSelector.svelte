@@ -25,7 +25,7 @@
   $: mode = $modesStore[domain].find((m) => m.code === modeCode)
   $: modeColors =
     domain === 'backlight'
-      ? $backlightColorsStore[modeCode].map(reduceOpacity)
+      ? ($backlightColorsStore[modeCode] ?? defaultColors).map(reduceOpacity)
       : defaultColors.map(reduceOpacity)
   $: supportsRandom = mode?.supports.randomColor ?? false
   $: supportsColor = mode?.supports.specificColor

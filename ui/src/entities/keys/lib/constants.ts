@@ -7,12 +7,13 @@ import {
   type KeyChangesMap,
   type KeyMap,
 } from '../model/types'
-import { Halo65, Halo75, Halo96 } from './layouts'
+import { Air96V2, Halo65, Halo75, Halo96 } from './layouts'
 
 export const supportedKeyboards: Record<string, KeyboardLayout> = {
   Halo75,
   Halo65,
   Halo96,
+  Air96V2,
 } as const
 
 export const defaultTemplate: Readonly<KeyboardTemplate> = {

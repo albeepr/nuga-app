@@ -16,7 +16,7 @@ export function renderBacklightColors (
 ): KeyHighlightMatrix {
   const { enabled, mode, color } = state
 
-  if (!enabled || colors.length < mode || colors[mode].length < color) {
+  if (!enabled || !colors[mode] || colors[mode].length < color) {
     return renderColorMatrix(template, 'transparent')
   } else if (color === 7) {
     return renderGradientMatrix(template)

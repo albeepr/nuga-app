@@ -4,6 +4,7 @@ package usecase
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"nuga_ui/config"
 	"nuga_ui/internal/dto"
@@ -93,7 +94,9 @@ func (d *DeviceUsecase) GetFirmware() string {
 
 // GetSupports returns current device supports
 func (d *DeviceUsecase) GetSupports() *dto.Supports {
-	return dto.SupportedCapabilities(d.repo.Device.Get().Capabilities)
+	dev := d.repo.Device.Get()
+	supports := dto.SupportedCapabilities(dev.Capabilities)
+	return supports
 }
 
 // SaveState initiates state save process
@@ -106,11 +109,23 @@ func (d *DeviceUsecase) SaveState() error {
 	if err != nil {
 		return err
 	}
+	titles := d.repo.Settings.GetMacros().Titles()
+	if dev.IsVIA() {
+		viaState, err := dev.SaveVIAState()
+		if err != nil {
+			return err
+		}
+		return d.repo.State.WriteFile(path, dto.StateFile{
+			Version:     config.AppVersion,
+			State:       &dump.State{Name: dev.Name, Firmware: dev.Firmware},
+			VIA:         viaState,
+			MacroTitles: titles,
+		})
+	}
 	state, err := dump.Collect(dev.Handle)
 	if err != nil {
 		return err
 	}
-	titles := d.repo.Settings.GetMacros().Titles()
 	return d.repo.State.WriteFile(path, dto.StateFile{
 		Version:     config.AppVersion,
 		State:       &state,
@@ -139,8 +154,11 @@ func (d *DeviceUsecase) RestoreState() error {
 		return err
 	}
 	dev := d.repo.Device.Get()
-	if state.Name != dev.Name {
+	if state.State == nil || state.Name != dev.Name {
 		return errors.ErrStateWrongDevice
+	}
+	if dev.IsVIA() {
+		return d.restoreVIAState(state)
 	}
 	err = dump.Restore(dev.Handle, state.State)
 	if err != nil {
@@ -164,9 +182,66 @@ func (d *DeviceUsecase) RestoreState() error {
 // RestoreDefaultState restores default state
 func (d *DeviceUsecase) RestoreDefaultState() error {
 	dev := d.repo.Device.Get()
+	if dev.IsVIA() {
+		err := dev.ResetVIADefaults()
+		if err != nil {
+			return err
+		}
+		return d.repo.Settings.SetMacros(dto.Macros{})
+	}
 	defaultState, err := dump.GetDefaults(dev.Name)
 	if err != nil {
 		return err
 	}
 	return dump.Restore(dev.Handle, defaultState)
+}
+
+func (d *DeviceUsecase) restoreVIAState(state dto.StateFile) error {
+	if state.VIA == nil {
+		return errors.ErrStateWrongDevice
+	}
+	dev := d.repo.Device.Get()
+	err := dev.RestoreVIAState(state.VIA)
+	if err != nil {
+		return err
+	}
+	macros, err := dev.Features.Keys.GetMacros()
+	if err != nil {
+		return err
+	}
+	macrosSettings, err := dto.MacrosFromDomain(macros, state.MacroTitles)
+	if err != nil {
+		return err
+	}
+	return d.repo.Settings.SetMacros(macrosSettings)
+}
+
+// GetStatus returns battery, connection and OS switch state.
+// Returns nil when the keyboard does not report it.
+func (d *DeviceUsecase) GetStatus() *dto.KeyboardStatus {
+	dev := d.repo.Device.Get()
+	if dev == nil || !dev.IsVIA() {
+		return nil
+	}
+	s, err := dev.VIAStatus()
+	if err != nil {
+		return nil
+	}
+	connection := "USB"
+	switch s.Link {
+	case 0:
+		connection = "2.4G dongle (settings over USB cable)"
+	case 1, 2, 3:
+		connection = fmt.Sprintf("Bluetooth %d (settings over USB cable)", s.Link)
+	}
+	osName := "Windows"
+	if s.OS == "mac" {
+		osName = "macOS"
+	}
+	return &dto.KeyboardStatus{
+		Battery:    s.Battery,
+		Charging:   s.Charging,
+		Connection: connection,
+		OS:         osName,
+	}
 }

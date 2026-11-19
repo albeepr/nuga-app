@@ -1,7 +1,7 @@
 import type { SidebarLayoutProps } from '@naco-ui/svelte'
 import type { ComponentType, SvelteComponent } from 'svelte'
 
-export type SupportedKeyboards = 'Halo65' | 'Halo75' | 'Halo96'
+export type SupportedKeyboards = 'Halo65' | 'Halo75' | 'Halo96' | 'Air96V2'
 
 export type ConnectionDescription = {
   name: string

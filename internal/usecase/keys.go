@@ -9,8 +9,11 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/mishamyrt/nuga-lib"
 	"github.com/mishamyrt/nuga-lib/dump"
+	"github.com/mishamyrt/nuga-lib/features"
 	"github.com/mishamyrt/nuga-lib/features/keys/layout"
+	"github.com/mishamyrt/nuga-lib/features/qmkkeys"
 )
 
 // KeysUsecase represents the keys use case
@@ -108,6 +111,9 @@ func (k *KeysUsecase) GetKeys() (*dto.KeyMap, error) {
 func (k *KeysUsecase) GetDefaultKeys() (*dto.KeyMap, error) {
 	mode := k.repo.Settings.GetMode()
 	dev := k.repo.Device.Get()
+	if provider, ok := dev.Features.Keys.(features.DefaultKeyMapProvider); ok {
+		return (*dto.KeyMap)(provider.DefaultKeyMap(mode == dto.MacOSMode)), nil
+	}
 	defaultState, err := dump.GetDefaults(dev.Name)
 	if err != nil {
 		return nil, err
@@ -163,11 +169,25 @@ var groupsOrder = []string{
 	"Function",
 	"Symbols",
 	"NumPad",
+	qmkkeys.GroupSideLight,
+	qmkkeys.GroupNuPhy,
+	qmkkeys.GroupLayers,
+	qmkkeys.GroupOther,
 }
 
 // GetKeyGroups returns the key groups
 func (k *KeysUsecase) GetKeyGroups() []dto.KeyGroup {
 	keys := make(map[string][]dto.Key)
+	dev := k.repo.Device.Get()
+	if provider, ok := keyDescriptions(dev); ok {
+		for _, key := range provider.KeyDescriptions() {
+			keys[key.Group] = append(keys[key.Group], dto.Key{
+				Title: key.Title,
+				Value: string(key.Name),
+			})
+		}
+		return k.sortGroups(keys)
+	}
 	for code, key := range layout.Keys {
 		if keys[key.Group] == nil {
 			keys[key.Group] = make([]dto.Key, 0)
@@ -177,6 +197,10 @@ func (k *KeysUsecase) GetKeyGroups() []dto.KeyGroup {
 			Value: string(code),
 		})
 	}
+	return k.sortGroups(keys)
+}
+
+func (k *KeysUsecase) sortGroups(keys map[string][]dto.Key) []dto.KeyGroup {
 	groups := make([]dto.KeyGroup, 0)
 	for group, keys := range keys {
 		k.sortGroup(group, keys)
@@ -208,4 +232,12 @@ func (k *KeysUsecase) sortGroup(group string, keys []dto.Key) {
 			return keys[i].Title < keys[j].Title
 		})
 	}
+}
+
+func keyDescriptions(dev *nuga.Device) (features.KeyDescriptionsProvider, bool) {
+	if dev == nil || dev.Features == nil {
+		return nil, false
+	}
+	provider, ok := dev.Features.Keys.(features.KeyDescriptionsProvider)
+	return provider, ok
 }

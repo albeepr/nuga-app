@@ -1,4 +1,8 @@
-# Nuga [![Quality assurance](https://github.com/mishamyrt/Nuga/actions/workflows/quality-assurance.yaml/badge.svg)](https://github.com/mishamyrt/Nuga/actions/workflows/quality-assurance.yaml)
+# Nuga — Air96 V2 edition
+
+> **This is a fork of [mishamyrt/Nuga](https://github.com/mishamyrt/Nuga)** that adds support for the
+> **NuPhy Air96 V2** (QMK/VIA firmware). All credit for Nuga goes to its original author;
+> Halo keyboards work exactly as in upstream Nuga 2.3.2.
 
 Application for controlling NuPhy® keyboards.
 
@@ -7,18 +11,63 @@ Application for controlling NuPhy® keyboards.
 ### Features
 
 - Lights control.
-- Key mapping control (Halo75 and Halo65 for now).
+- Key mapping control (Halo75, Halo65 and Air96 V2).
 - Macros control.
 
-**Supported devices**: Halo75, Halo65, Halo96.
+**Supported devices**: Halo75, Halo65, Halo96, Air96 V2.
+
+### NuPhy Air96 V2 (QMK/VIA)
+
+The Air96 V2 runs QMK firmware and is controlled over the VIA raw HID protocol
+instead of the Halo protocol. Supported:
+
+- Backlight: all 40 effects, brightness, speed, color.
+- Key remapping on the Mac and Windows layers, including every key's Fn layer, plus NuPhy actions (Bluetooth/2.4G switching, side-light keys, battery display).
+- Macros (VIA format).
+- Save, load and restore default.
+
+Not supported: side-light settings (NuPhy's firmware only changes them with Fn shortcuts and does not expose them over USB).
+
+Tested on an Air96 V2 ANSI with NuPhy's shipping firmware (version 4, USB ID `19F5:3265`).
+USB ID `19F5:3266` (NuPhy's public QMK source) is also recognised.
+
+Notes:
+
+- Keys Nuga has no name for (layer toggles, etc.) show as "QMK code 0x…" and are never overwritten unless you change them.
+- "Restore default" restores the keyboard firmware's own default keymap and clears macros.
+- The per-effect color palette is stored on the computer in `~/Library/Application Support/nuga/Air96V2-palette.json`; the keyboard only stores the active color.
+- Macro steps must be ordinary keys (letters, modifiers, media...). NuPhy-specific actions can't go inside macros (VIA limitation).
+- Close usevia.app in the browser while using Nuga.
+
+#### Wired, Bluetooth and 2.4G
+
+Settings travel over the USB cable only: the keyboard's radio chip runs NuPhy's
+closed firmware, which carries keystrokes but not configuration traffic. Switching
+to Bluetooth or 2.4G does not turn USB off, though, so you can type wirelessly
+with a USB cable plugged into the Mac and Nuga talks to the keyboard over the cable.
+This follows from the firmware source but has not been tested on hardware yet.
+
+The modified Nuga library lives in `third_party/nuga-lib` (wired in via `replace` in `go.mod`).
+
+#### Building this fork
+
+Needs Go (current Homebrew version is fine), the latest Wails v2 CLI
+(`go install github.com/wailsapp/wails/v2/cmd/wails@latest`), Node and `brew install hidapi`.
+The UI needs pnpm 9 (pnpm 11 blocks esbuild's install script):
+
+```sh
+wails generate module
+(cd ui && npx -y pnpm@9.15.9 install --frozen-lockfile && npx -y pnpm@9.15.9 run build)
+wails build -s -clean -trimpath -platform darwin/arm64
+```
 
 ## Installation
 
 ### macOS
 
-1. Download the zip archive labeled `mac` from the [latest release](https://github.com/mishamyrt/Nuga/releases/latest).
+1. Download `Nuga-2.3.2-air96v2-mac-arm64.zip` from this fork's [releases](https://github.com/albeepr/Nuga/releases) (Apple Silicon Macs).
 2. Unzip the archive, copy `Nuga.app` to Applications.
-3. Launch `Nuga.app`.
+3. Launch `Nuga.app`. The build is not signed: the first time, right-click it and choose **Open**.
 4. The application requests permission to Input Monitoring. This is required to work with the USB HID device. Grant permission.
 5. Restart the app
 
