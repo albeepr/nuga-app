@@ -65,7 +65,7 @@ wails build -s -clean -trimpath -platform darwin/arm64
 
 ### macOS
 
-1. Download `Nuga-2.3.2-air96v2-mac-arm64.zip` from this fork's [releases](https://github.com/albeepr/Nuga/releases) (Apple Silicon Macs).
+1. Download `Nuga-2.3.2-air96v2-mac-arm64.zip` from this fork's [releases](https://github.com/albeepr/nuga-app/releases) (Apple Silicon Macs).
 2. Unzip the archive, copy `Nuga.app` to Applications.
 3. Launch `Nuga.app`. The build is not signed: the first time, right-click it and choose **Open**.
 4. The application requests permission to Input Monitoring. This is required to work with the USB HID device. Grant permission.
